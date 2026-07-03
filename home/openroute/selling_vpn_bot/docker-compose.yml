@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  openroute_db:
+    image: postgres:15-alpine
+    container_name: openroute_db
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - openroute_db_data:/var/lib/postgresql/data
+    networks:
+      - openroute_net
+
+  openroute_redis:
+    image: redis:7-alpine
+    container_name: openroute_redis
+    restart: always
+    volumes:
+      - openroute_redis_data:/data
+    networks:
+      - openroute_net
+
+  openroute_web:
+    build: .
+    container_name: openroute_web
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - openroute_db
+      - openroute_redis
+    ports:
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - .:/app
+      - ./backups:/app/backups
+      - openroute_tunnel_data:/app/tunnel/data
+      - /var/www/openroute_website:/var/www/openroute_website
+    networks:
+      - openroute_net
+
+  openroute_ssh:
+    build:
+      context: ./ssh_daemon
+      dockerfile: Dockerfile.ssh
+    container_name: openroute_ssh
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - ROOT_PASSWORD=YOUR_REMOTE_SERVER_ROOT_PASSWORD
+    ports:
+      - "2223:22"
+    volumes:
+      - .:/app:ro
+      - openroute_ssh_home:/home
+    networks:
+      - openroute_net
+
+  openroute_tunnel:
+    build: .
+    container_name: openroute_tunnel
+    restart: always
+    env_file:
+      - .env
+    command: python -m tunnel.server
+    ports:
+      - "127.0.0.1:8746:8745"
+    depends_on:
+      - openroute_web
+    volumes:
+      - .:/app
+      - openroute_tunnel_data:/app/tunnel/data
+      - /var/www/openroute_website:/var/www/openroute_website
+    networks:
+      - openroute_net
+
+networks:
+  openroute_net:
+    name: openroute_net
+
+volumes:
+  openroute_db_data:
+    name: openroute_db_data
+  openroute_redis_data:
+    name: openroute_redis_data
+  openroute_tunnel_data:
+    name: openroute_tunnel_data
+  openroute_ssh_home:
+    name: openroute_ssh_home

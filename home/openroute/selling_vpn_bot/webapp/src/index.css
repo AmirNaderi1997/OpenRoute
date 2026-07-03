@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Base Theme Variables */
+  --font-vazir: 'Vazirmatn', sans-serif;
+  
+  /* Fallback Telegram Color tokens (fallback to rich dark theme) */
+  --tg-theme-bg-color: #0b0f19;
+  --tg-theme-text-color: #f8fafc;
+  --tg-theme-hint-color: #64748b;
+  --tg-theme-link-color: #6366f1;
+  --tg-theme-button-color: #4f46e5;
+  --tg-theme-button-text-color: #ffffff;
+  --tg-theme-secondary-bg-color: #111827;
+  
+  /* Accent Neon Gradients */
+  --color-primary-start: #4f46e5;
+  --color-primary-end: #7c3aed;
+  --color-accent: #db2777;
+  
+  /* Status Colors */
+  --color-status-active: #10b981;
+  --color-status-warning: #f59e0b;
+  --color-status-danger: #ef4444;
+}
+
+/* Telegram Native Theme Sync overrides if available */
+body.telegram-theme {
+  background-color: var(--tg-theme-bg-color);
+  color: var(--tg-theme-text-color);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-vazir), sans-serif;
+  background-color: var(--tg-theme-bg-color);
+  color: var(--tg-theme-text-color);
+  direction: rtl;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.35);
+}
+
+/* Safe bottom padding for Telegram UI */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
+}

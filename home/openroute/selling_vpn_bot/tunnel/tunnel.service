@@ -1,0 +1,15 @@
+[Unit]
+Description=WebSocket-to-TCP SSH Tunnel Proxy Service
+After=network.target nginx.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/selling_vpn_bot/tunnel
+ExecStart=/root/selling_vpn_bot/tunnel/venv/bin/python server.py
+Restart=always
+RestartSec=5s
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

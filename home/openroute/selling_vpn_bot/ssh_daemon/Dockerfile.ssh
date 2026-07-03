@@ -1,0 +1,32 @@
+FROM ubuntu:22.04
+
+# Avoid interactive installation prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install OpenSSH server, Python3 (for management script), and base utilities
+RUN apt-get update && apt-get install -y \
+    openssh-server \
+    python3 \
+    sudo \
+    iptables \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up SSH directory
+RUN mkdir -p /var/run/sshd
+
+# Configure SSH daemon settings
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config \
+    && sed -i 's/UsePAM yes/UsePAM no/' /etc/ssh/sshd_config
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Expose default SSH port internally
+EXPOSE 22
+
+ENTRYPOINT ["/entrypoint.sh"]

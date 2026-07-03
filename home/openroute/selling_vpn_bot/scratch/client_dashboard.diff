@@ -1,0 +1,454 @@
+diff --git a/webapp/src/views/ClientDashboard.tsx b/webapp/src/views/ClientDashboard.tsx
+index c82a731..0d0fe4a 100644
+--- a/webapp/src/views/ClientDashboard.tsx
++++ b/webapp/src/views/ClientDashboard.tsx
+@@ -1,5 +1,5 @@
+ import React, { useEffect, useState } from 'react';
+-import { Copy, Server, CreditCard, Home, LifeBuoy, Plus, Send, ChevronRight, AlertCircle, ArrowLeft, RefreshCw, Cpu, Wifi, UserCheck, Shield, HelpCircle, Check, BookOpen } from 'lucide-react';
++import { Copy, Server, CreditCard, Home, LifeBuoy, Plus, Send, ChevronRight, AlertCircle, ArrowLeft, RefreshCw, Cpu, Wifi, UserCheck, Shield, HelpCircle, Check, BookOpen, Bitcoin, CheckCircle } from 'lucide-react';
+ import { apiClient } from '../api/client';
+ import { PaymentSection } from '../components/PaymentSection';
+ import '../App.css';
+@@ -34,6 +34,19 @@ interface Message {
+   created_at: string;
+ }
+ 
++interface ShopPlan {
++  id: number;
++  key: 'single' | 'multi';
++  title: string;
++  users: string;
++  bandwidth: string;
++  latency: string;
++  location: string;
++  priceToman: number;
++  priceUsd: number;
++  popular: boolean;
++}
++
+ export const ClientDashboard: React.FC = () => {
+   const [activeTab, setActiveTab] = useState<'dashboard' | 'shop' | 'wallet' | 'support' | 'tutorial'>('dashboard');
+   const [dashboardData, setDashboardData] = useState<any>(null);
+@@ -53,6 +66,17 @@ export const ClientDashboard: React.FC = () => {
+   const [newTicketMessage, setNewTicketMessage] = useState('');
+   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
+   const [submittingTicket, setSubmittingTicket] = useState(false);
++  const [selectedPlanKey, setSelectedPlanKey] = useState<'single' | 'multi' | null>(null);
++  const [shopMethod, setShopMethod] = useState<'card' | 'crypto' | null>(null);
++  const [shopReceiptFile, setShopReceiptFile] = useState<File | null>(null);
++  const [shopDiscountCode, setShopDiscountCode] = useState('');
++  const [shopDiscountApplied, setShopDiscountApplied] = useState(false);
++  const [shopDiscountPercent, setShopDiscountPercent] = useState<number | null>(null);
++  const [shopPayableToman, setShopPayableToman] = useState<number | null>(null);
++  const [shopPayableUsd, setShopPayableUsd] = useState<number | null>(null);
++  const [shopLoading, setShopLoading] = useState(false);
++  const [shopStatus, setShopStatus] = useState<'idle' | 'success' | 'error'>('idle');
++  const [shopError, setShopError] = useState('');
+ 
+   const fetchDashboard = async () => {
+     setLoading(true);
+@@ -424,41 +448,136 @@ export const ClientDashboard: React.FC = () => {
+   };
+ 
+   const renderShopTab = () => {
+-    const plans = [
++    const plans: ShopPlan[] = [
+       {
+-        id: 'single',
++        id: 1,
++        key: 'single',
+         title: 'یک ماهه تک کاربره',
+         users: '۱ کاربر',
+         bandwidth: 'ترافیک نامحدود',
+         latency: 'سرعت نامحدود (مناسب یوتیوب و وب‌گردی)',
+         location: 'انگلستان - لندن 🇬🇧',
+-        price: 600000,
++        priceToman: 600000,
++        priceUsd: 5,
+         popular: false,
+       },
+       {
+-        id: 'multi',
++        id: 2,
++        key: 'multi',
+         title: 'یک ماهه دو کاربره',
+         users: '۲ کاربر همزمان',
+         bandwidth: 'ترافیک نامحدود',
+         latency: 'سرعت فوق العاده (مناسب گیمینگ و دانلود)',
+-        location: 'آلمان - فرانکفورت 🇩🇪',
+-        price: 800000,
++        location: 'انگلستان - لندن 🇬🇧',
++        priceToman: 800000,
++        priceUsd: 7,
+         popular: true,
+       }
+     ];
++    const selectedPlan = plans.find((plan) => plan.key === selectedPlanKey) || null;
++    const systemCard = '5859831130851222';
++    const systemName = 'امیرحسین نادری';
++
++    const startPlanCheckout = (planKey: 'single' | 'multi') => {
++      setSelectedPlanKey(planKey);
++      setShopMethod(null);
++      setShopReceiptFile(null);
++      setShopDiscountCode('');
++      setShopDiscountApplied(false);
++      setShopDiscountPercent(null);
++      setShopPayableToman(null);
++      setShopPayableUsd(null);
++      setShopStatus('idle');
++      setShopError('');
++    };
++
++    const applyShopDiscount = async () => {
++      if (!selectedPlan || !shopDiscountCode.trim()) {
++        setShopStatus('error');
++        setShopError('ابتدا سرویس و کد تخفیف را انتخاب کنید.');
++        return;
++      }
++      try {
++        const response = await apiClient.post('/webapp/payments/discount/preview', {
++          plan_id: selectedPlan.id,
++          discount_code: shopDiscountCode.trim(),
++          payment_method: shopMethod,
++        });
++        setShopDiscountApplied(true);
++        setShopDiscountPercent(response.data?.percent_off ?? null);
++        setShopPayableToman(response.data?.payable_toman ?? null);
++        setShopPayableUsd(response.data?.payable_usd ?? null);
++        setShopStatus('idle');
++        setShopError('');
++      } catch (err: any) {
++        setShopDiscountApplied(false);
++        setShopDiscountPercent(null);
++        setShopPayableToman(null);
++        setShopPayableUsd(null);
++        setShopStatus('error');
++        const detail = err.response?.data?.detail;
++        setShopError(typeof detail === 'object' ? JSON.stringify(detail) : detail || 'کد تخفیف معتبر نیست.');
++      }
++    };
++
++    const handleShopCardSubmit = async () => {
++      if (!selectedPlan || !shopReceiptFile) {
++        setShopStatus('error');
++        setShopError('لطفاً فقط تصویر اسکرین‌شات رسید پرداخت را انتخاب کنید.');
++        return;
++      }
++
++      setShopLoading(true);
++      setShopStatus('idle');
++      const formData = new FormData();
++      formData.append('plan_id', selectedPlan.id.toString());
++      if (shopDiscountCode.trim()) {
++        formData.append('discount_code', shopDiscountCode.trim());
++      }
++      formData.append('file', shopReceiptFile);
++
++      try {
++        await apiClient.post('/webapp/payments/charge', formData, {
++          headers: {
++            'Content-Type': 'multipart/form-data',
++          },
++        });
++        setShopStatus('success');
++        setShopReceiptFile(null);
++      } catch (err: any) {
++        setShopStatus('error');
++        const detail = err.response?.data?.detail;
++        setShopError(typeof detail === 'object' ? JSON.stringify(detail) : detail || 'خطا در ثبت سفارش. لطفا مجددا تلاش کنید.');
++      } finally {
++        setShopLoading(false);
++      }
++    };
+ 
+-    const handleBuy = (plan: any) => {
+-      // In production WebApp, triggers Telegram MainButton
+-      if (window.Telegram?.WebApp?.MainButton) {
+-        window.Telegram.WebApp.MainButton.text = `💳 خرید ${plan.title} - ${formatPrice(plan.price)}`;
+-        window.Telegram.WebApp.MainButton.show();
+-        window.Telegram.WebApp.MainButton.onClick(() => {
+-          alert(`درخواست خرید طرح با موفقیت ثبت شد. لطفا موجودی کیف پول خود را به میزان ${formatPrice(plan.price)} شارژ نمایید.`);
+-          setActiveTab('wallet');
+-          window.Telegram?.WebApp?.MainButton.hide();
++    const handleShopCryptoSubmit = async () => {
++      if (!selectedPlan) return;
++      setShopLoading(true);
++      setShopStatus('idle');
++      try {
++        const response = await apiClient.post('/webapp/payments/plan/crypto', {
++          plan_id: selectedPlan.id,
++          discount_code: shopDiscountCode.trim() || undefined,
+         });
+-      } else {
+-        alert(`جهت خرید طرح، لطفاً از کیف پول خود اقدام نمایید یا دکمه‌های بات را فشار دهید.`);
++        if (response.data?.url) {
++          if (window.Telegram?.WebApp?.openLink) {
++            window.Telegram.WebApp.openLink(response.data.url);
++          } else {
++            window.location.href = response.data.url;
++          }
++        } else {
++          setShopStatus('error');
++          setShopError('خطا در دریافت لینک درگاه پرداخت.');
++        }
++      } catch (err: any) {
++        setShopStatus('error');
++        const detail = err.response?.data?.detail;
++        setShopError(typeof detail === 'object' ? JSON.stringify(detail) : detail || 'خطا در برقراری ارتباط با درگاه NOWPayments.');
++      } finally {
++        setShopLoading(false);
+       }
+     };
+ 
+@@ -503,11 +622,13 @@ export const ClientDashboard: React.FC = () => {
+ 
+               <div className="mt-6 flex items-center justify-between">
+                 <div>
+-                  <span className="block text-[9px] text-gray-400">قیمت نهایی:</span>
+-                  <span className="text-base font-black text-white font-sans">{formatPrice(p.price)}</span>
++                  <span className="block text-[9px] text-gray-400">قیمت سرویس</span>
++                  <span className="text-xs font-black text-white font-sans">
++                    {formatPrice(p.priceToman)} / ${p.priceUsd.toFixed(2)}
++                  </span>
+                 </div>
+                 <button 
+-                  onClick={() => handleBuy(p)}
++                  onClick={() => startPlanCheckout(p.key)}
+                   className="bg-gradient-premium text-white font-bold px-6 py-2.5 rounded-2xl text-xs shadow-lg shadow-indigo-600/30 active:scale-[0.97] transition-all"
+                 >
+                   ثبت سفارش
+@@ -516,6 +637,233 @@ export const ClientDashboard: React.FC = () => {
+             </div>
+           ))}
+         </div>
++
++        {selectedPlan && (
++          <div className="glass-panel rounded-3xl p-5 border border-white/10 space-y-4">
++            <div className="flex items-center justify-between">
++              <div>
++                <h3 className="font-extrabold text-base text-white">{selectedPlan.title}</h3>
++                <p className="text-xs text-gray-400 mt-1">ابتدا روش پرداخت را انتخاب کنید</p>
++              </div>
++              <button
++                onClick={() => {
++                  setSelectedPlanKey(null);
++                  setShopMethod(null);
++                  setShopReceiptFile(null);
++                  setShopStatus('idle');
++                  setShopError('');
++                }}
++                className="text-xs text-gray-400 hover:text-white"
++              >
++                بستن
++              </button>
++            </div>
++
++            {!shopMethod ? (
++              <div className="space-y-3">
++                <button
++                  onClick={() => {
++                    setShopMethod('card');
++                    setShopDiscountApplied(false);
++                    setShopPayableToman(null);
++                    setShopStatus('idle');
++                    setShopError('');
++                  }}
++                  className="w-full bg-slate-900/60 border border-white/10 rounded-2xl px-4 py-3 text-sm font-bold text-white hover:border-indigo-500/40 transition-all"
++                >
++                  <CreditCard size={16} className="inline ml-2 text-indigo-400" />
++                  کارت به کارت
++                </button>
++                <button
++                  onClick={() => {
++                    setShopMethod('crypto');
++                    setShopDiscountApplied(false);
++                    setShopPayableUsd(null);
++                    setShopStatus('idle');
++                    setShopError('');
++                  }}
++                  className="w-full bg-slate-900/60 border border-white/10 rounded-2xl px-4 py-3 text-sm font-bold text-white hover:border-indigo-500/40 transition-all"
++                >
++                  <Bitcoin size={16} className="inline ml-2 text-indigo-400" />
++                  پرداخت ارز دیجیتال
++                </button>
++              </div>
++            ) : shopMethod === 'card' ? (
++              <div className="space-y-4">
++                <div className="space-y-1.5">
++                  <label className="block text-xs font-bold text-indigo-300">کد تخفیف</label>
++                  <div className="flex gap-2">
++                    <input
++                      type="text"
++                      value={shopDiscountCode}
++                      onChange={(e) => {
++                        setShopDiscountCode(e.target.value.toUpperCase());
++                        setShopDiscountApplied(false);
++                        setShopPayableToman(null);
++                      }}
++                      placeholder="اختیاری"
++                      className="flex-1 bg-slate-950/60 border border-white/10 rounded-2xl px-4 py-3 text-center font-bold text-white focus:outline-none focus:border-indigo-500 transition-all"
++                    />
++                    <button onClick={applyShopDiscount} type="button" className="px-4 py-3 rounded-2xl text-xs font-bold bg-white/5 border border-white/10 text-white">
++                      اعمال
++                    </button>
++                  </div>
++                </div>
++
++                <div className="bg-slate-950/40 p-4 rounded-2xl border border-white/5 text-right space-y-2">
++                  <div className="flex justify-between items-center text-xs">
++                    <span className="text-gray-400">روش پرداخت:</span>
++                    <span className="font-bold text-white">کارت به کارت</span>
++                  </div>
++                  <div className="flex justify-between items-center text-xs">
++                    <span className="text-gray-400">مبلغ قابل پرداخت:</span>
++                    <span className="font-bold text-indigo-400">{formatPrice(shopPayableToman ?? selectedPlan.priceToman)}</span>
++                  </div>
++                  <div className="flex justify-between items-center text-xs">
++                    <span className="text-gray-400">شماره کارت:</span>
++                    <button
++                      onClick={() => handleCopy(systemCard, 'shop-card')}
++                      className="font-mono text-white font-bold"
++                    >
++                      {systemCard}
++                    </button>
++                  </div>
++                  <div className="flex justify-between items-center text-xs">
++                    <span className="text-gray-400">صاحب کارت:</span>
++                    <span className="font-bold text-white">{systemName}</span>
++                  </div>
++                </div>
++
++                {shopDiscountApplied && shopPayableToman !== null && (
++                  <div className="bg-emerald-500/10 text-emerald-300 p-3 rounded-2xl text-xs border border-emerald-500/20">
++                    مبلغ با {shopDiscountPercent}% تخفیف محاسبه شد.
++                  </div>
++                )}
++
++                <div className="space-y-1.5">
++                  <label className="block text-xs font-bold text-indigo-300">تصویر رسید پرداخت (اسکرین‌شات)</label>
++                  <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-2xl cursor-pointer hover:bg-slate-900/30 border-white/10 hover:border-indigo-500/50 transition-colors">
++                    <p className="text-[10px] text-gray-400 text-center px-4 truncate max-w-full">
++                      {shopReceiptFile ? (
++                        <span className="text-indigo-400 font-bold">{shopReceiptFile.name}</span>
++                      ) : (
++                        <span>فقط تصویر اسکرین‌شات رسید همین پرداخت را انتخاب کنید</span>
++                      )}
++                    </p>
++                    <input
++                      type="file"
++                      className="hidden"
++                      accept="image/*"
++                      onChange={(e) => {
++                        if (e.target.files && e.target.files.length > 0) {
++                          const file = e.target.files[0];
++                          if (!file.type.startsWith('image/')) {
++                            alert('فقط فایل‌های تصویری اسکرین‌شات مجاز هستند.');
++                            e.target.value = '';
++                            return;
++                          }
++                          setShopReceiptFile(file);
++                        }
++                      }}
++                    />
++                  </label>
++                </div>
++
++                {shopStatus === 'success' && (
++                  <div className="bg-emerald-500/10 text-emerald-400 p-3.5 rounded-2xl text-xs flex items-center border border-emerald-500/20">
++                    <CheckCircle size={15} className="ml-2 shrink-0" />
++                    سفارش شما ثبت شد و پس از تایید مدیریت، سرویس برای شما فعال خواهد شد.
++                  </div>
++                )}
++
++                {shopStatus === 'error' && (
++                  <div className="bg-rose-500/10 text-rose-400 p-3.5 rounded-2xl text-xs flex items-center border border-rose-500/20">
++                    <AlertCircle size={15} className="ml-2 shrink-0" />
++                    {shopError}
++                  </div>
++                )}
++
++                <button
++                  onClick={handleShopCardSubmit}
++                  disabled={!shopReceiptFile || shopLoading}
++                  className={`w-full font-bold py-3.5 rounded-2xl text-sm flex justify-center items-center transition-all duration-300 ${
++                    shopReceiptFile && !shopLoading
++                      ? 'bg-gradient-premium text-white shadow-lg shadow-indigo-600/30 active:scale-[0.98]'
++                      : 'bg-slate-800 text-gray-500 cursor-not-allowed border border-white/5'
++                  }`}
++                >
++                  {shopLoading ? (
++                    <>
++                      <RefreshCw className="animate-spin ml-2" size={16} />
++                      در حال ثبت سفارش...
++                    </>
++                  ) : 'ثبت سفارش کارت به کارت'}
++                </button>
++              </div>
++            ) : (
++              <div className="space-y-4">
++                <div className="space-y-1.5">
++                  <label className="block text-xs font-bold text-indigo-300">کد تخفیف</label>
++                  <div className="flex gap-2">
++                    <input
++                      type="text"
++                      value={shopDiscountCode}
++                      onChange={(e) => {
++                        setShopDiscountCode(e.target.value.toUpperCase());
++                        setShopDiscountApplied(false);
++                        setShopPayableUsd(null);
++                      }}
++                      className="flex-1 bg-slate-950/60 border border-white/10 rounded-2xl px-4 py-3 text-center font-bold text-white focus:outline-none focus:border-indigo-500 transition-all"
++                      placeholder="اختیاری"
++                    />
++                    <button onClick={applyShopDiscount} type="button" className="px-4 py-3 rounded-2xl text-xs font-bold bg-white/5 border border-white/10 text-white">
++                      اعمال
++                    </button>
++                  </div>
++                </div>
++
++                <div className="bg-slate-950/40 p-4 rounded-2xl border border-white/5 text-right space-y-2">
++                  <div className="flex justify-between items-center text-xs">
++                    <span className="text-gray-400">روش پرداخت:</span>
++                    <span className="font-bold text-white">پرداخت ارز دیجیتال</span>
++                  </div>
++                  <div className="flex justify-between items-center text-xs">
++                    <span className="text-gray-400">مبلغ قابل پرداخت:</span>
++                    <span className="font-bold text-indigo-400 font-mono">${(shopPayableUsd ?? selectedPlan.priceUsd).toFixed(2)}</span>
++                  </div>
++                  <div className="flex justify-between items-center text-xs">
++                    <span className="text-gray-400">پلن:</span>
++                    <span className="font-bold text-white">{selectedPlan.title}</span>
++                  </div>
++                </div>
++
++                {shopStatus === 'error' && (
++                  <div className="bg-rose-500/10 text-rose-400 p-3.5 rounded-2xl text-xs flex items-center border border-rose-500/20">
++                    <AlertCircle size={15} className="ml-2 shrink-0" />
++                    {shopError}
++                  </div>
++                )}
++
++                <button
++                  onClick={handleShopCryptoSubmit}
++                  disabled={shopLoading}
++                  className={`w-full font-bold py-3.5 rounded-2xl text-sm flex justify-center items-center transition-all duration-300 ${
++                    !shopLoading
++                      ? 'bg-gradient-premium text-white shadow-lg shadow-indigo-600/30 active:scale-[0.98]'
++                      : 'bg-slate-800 text-gray-500 cursor-not-allowed border border-white/5'
++                  }`}
++                >
++                  {shopLoading ? (
++                    <>
++                      <RefreshCw className="animate-spin ml-2" size={16} />
++                      در حال اتصال به درگاه...
++                    </>
++                  ) : 'پرداخت با NOWPayments'}
++                </button>
++              </div>
++            )}
++          </div>
++        )}
+       </div>
+     );
+   };
