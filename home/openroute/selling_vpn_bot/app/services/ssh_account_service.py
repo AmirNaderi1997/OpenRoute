@@ -230,9 +230,12 @@ async def renew_v2ray_account(account: SshAccount, duration_days: int = 30) -> t
             token=token,
         )
 
+    if not account.import_link:
+        account.import_link = f"{settings.PASARGUARD_API_BASE.rstrip('/')}/sub/{account.ssh_username}"
+
     account.expires_at = new_expiry
     account.status = "active"
-    return new_expiry, str(account.import_link or "")
+    return new_expiry, str(account.import_link)
 
 
 async def renew_ssh_account(

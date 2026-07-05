@@ -78,14 +78,8 @@ def build_import_link(
 ) -> str:
     if service_type == ACCOUNT_TYPE_SSH:
         return build_ssh_import_link(username, password, host=host, port=port)
-    host = settings.VPN_PUBLIC_HOST or "p.ipping.ir"
-    port = settings.VPN_PUBLIC_PORT or 20443
-    return build_vless_reality_link(
-        password,
-        host,
-        port,
-        remark="VLESS Reality Tunnel",
-    )
+    
+    return f"{settings.PASARGUARD_API_BASE.rstrip('/')}/sub/{username}"
 
 
 def get_connection_details(
