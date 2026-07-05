@@ -220,7 +220,7 @@ app.include_router(payments_router, prefix="/api/v1/payments")
 @app.get("/sub/{token}/{client_type}")
 async def proxy_subscription(token: str, client_type: str | None = None, request: Request = None):
     suffix = f"/{client_type}" if client_type else ""
-    target_url = f"{settings.PASARGUARD_API_BASE.rstrip('/')}/sub/{token}{suffix}"
+    target_url = f"{settings.PASARGUARD_API_BASE.rstrip('/')}/pasarguard-sub/{token}{suffix}"
     headers = dict(request.headers)
     headers.pop("host", None)
     
