@@ -283,15 +283,7 @@ async def proxy_subscription(token: str, client_type: str | None = None, request
                         # List of candidate configurations: (address, port, sni, remark_suffix)
                         candidates = [
                             (settings.VLESS_TUNNEL_HOST, settings.VLESS_TUNNEL_PORT, "yahoo.com", "Tunnel-Yahoo"),
-                            (settings.VLESS_TUNNEL_HOST, settings.VLESS_TUNNEL_PORT, "microsoft.com", "Tunnel-Microsoft"),
-                            (settings.VLESS_TUNNEL_HOST, settings.VLESS_TUNNEL_PORT, "speedtest.net", "Tunnel-Speedtest"),
-                            (settings.VLESS_TUNNEL_HOST, settings.VLESS_TUNNEL_PORT, "play.google.com", "Tunnel-GooglePlay"),
-                            (settings.VLESS_TUNNEL_HOST, settings.VLESS_TUNNEL_PORT, "zoom.us", "Tunnel-Zoom"),
                             ("p.ipping.ir", settings.VLESS_TUNNEL_PORT, "yahoo.com", "Direct-Yahoo"),
-                            ("p.ipping.ir", settings.VLESS_TUNNEL_PORT, "microsoft.com", "Direct-Microsoft"),
-                            ("p.ipping.ir", settings.VLESS_TUNNEL_PORT, "speedtest.net", "Direct-Speedtest"),
-                            ("p.ipping.ir", settings.VLESS_TUNNEL_PORT, "play.google.com", "Direct-GooglePlay"),
-                            ("p.ipping.ir", settings.VLESS_TUNNEL_PORT, "zoom.us", "Direct-Zoom"),
                         ]
                         
                         # Concurrent reachability tests
