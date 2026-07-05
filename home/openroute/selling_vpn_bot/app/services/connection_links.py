@@ -22,16 +22,16 @@ def normalize_reality_params(
     """
     params = dict(base_params or {})
     return {
-        "security": "reality",
-        "allowInsecure": "0",
         "encryption": "none",
+        "security": "reality",
         "type": "tcp",
+        "headerType": "none",
+        "host": "p.ipping.ir",
         "sni": sni,
-        "sid": params.get("sid", REALITY_SHORT_ID),
         "fp": params.get("fp", "chrome"),
         "pbk": params.get("pbk", REALITY_PUBLIC_KEY),
+        "sid": params.get("sid", REALITY_SHORT_ID),
         "spx": "/",
-        "headerType": "none",
     }
 
 
