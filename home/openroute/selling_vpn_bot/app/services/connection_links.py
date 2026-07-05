@@ -4,7 +4,7 @@ from urllib.parse import quote, urlencode
 from app.core.config import settings
 from app.services.account_types import ACCOUNT_TYPE_SSH
 
-REALITY_PUBLIC_KEY = "65xmnjL5GoQm8CEzy45NAdQsQBr8dQYE15Q0VD418yI"
+REALITY_PUBLIC_KEY = "t3YMi-D9VkCX2pcLRuH3UCtaLT6ON2GeA29mIfgfLmo"
 REALITY_SHORT_ID = "0123456789abcdef"
 REALITY_DEFAULT_SNI = "yahoo.com"
 
@@ -30,6 +30,7 @@ def normalize_reality_params(
         "sid": params.get("sid", REALITY_SHORT_ID),
         "fp": params.get("fp", "chrome"),
         "pbk": params.get("pbk", REALITY_PUBLIC_KEY),
+        "spx": "/",
         "headerType": "none",
     }
 
