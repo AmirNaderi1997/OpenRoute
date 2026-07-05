@@ -78,8 +78,9 @@ def build_import_link(
 ) -> str:
     if service_type == ACCOUNT_TYPE_SSH:
         return build_ssh_import_link(username, password, host=host, port=port)
+    # For VLESS Reality, use the actual VPN host and the reality port 20443
     host = settings.VPN_PUBLIC_HOST or "p.ipping.ir"
-    port = settings.VPN_PUBLIC_PORT or 20443
+    port = 20443
     return build_vless_reality_link(
         password,
         host,

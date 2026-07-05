@@ -102,13 +102,7 @@ async def create_v2ray_account(
         if user_response.proxy_settings and user_response.proxy_settings.vless:
             vless_id = user_response.proxy_settings.vless.id or ""
 
-        sub_url = user_response.subscription_url or ""
-        if sub_url.startswith("http"):
-            import_link = sub_url
-        elif sub_url:
-            import_link = f"{settings.PASARGUARD_API_BASE.rstrip('/')}{sub_url}"
-        else:
-            import_link = f"{settings.PASARGUARD_API_BASE.rstrip('/')}/sub/{username}"
+        import_link = f"{settings.APP_BASE_URL.rstrip('/')}/sub/{username}"
 
         if isinstance(user_response.expire, (int, float)):
             expires_at = datetime.fromtimestamp(user_response.expire, tz=timezone.utc)
@@ -230,8 +224,7 @@ async def renew_v2ray_account(account: SshAccount, duration_days: int = 30) -> t
             token=token,
         )
 
-    if not account.import_link:
-        account.import_link = f"{settings.PASARGUARD_API_BASE.rstrip('/')}/sub/{account.ssh_username}"
+    account.import_link = settings.APP_BASE_URL.rstrip('/') + '/sub/' + account.ssh_username
 
     account.expires_at = new_expiry
     account.status = "active"
