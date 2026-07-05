@@ -122,10 +122,7 @@ async def _notify_support_ticket(message: Message, ticket_id: int, subject: str,
 
 def _build_account_text(acc: SshAccount) -> str:
     connection = get_connection_details(acc.ssh_username, acc.ssh_password, service_type=acc.service_type)
-    if acc.service_type == ACCOUNT_TYPE_V2RAY:
-        import_link = f"{settings.APP_BASE_URL.rstrip('/')}/sub/{acc.ssh_username}"
-    else:
-        import_link = str(acc.import_link or connection["import_link"])
+    import_link = str(acc.import_link or connection["import_link"])
     if acc.service_type == ACCOUNT_TYPE_SSH:
         return (
             "👤 <b>مشخصات سرویس:</b>\n\n"

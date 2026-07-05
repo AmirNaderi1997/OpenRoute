@@ -865,8 +865,9 @@ export const ClientDashboard: React.FC = () => {
         </div>
 
         {selectedPlan && (
-          <div className="glass-panel rounded-3xl p-5 border border-white/10 space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/80 transition-opacity animate-in fade-in duration-200" onClick={() => setSelectedPlanKey(null)}>
+            <div className="bg-slate-900 rounded-3xl p-5 border border-white/10 space-y-4 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-base text-white">{selectedPlan.title}</h3>
                 <p className="text-xs text-gray-400 mt-1">ابتدا روش پرداخت را انتخاب کنید</p>
@@ -1093,6 +1094,7 @@ export const ClientDashboard: React.FC = () => {
                 </button>
               </div>
             )}
+            </div>
           </div>
         )}
       </div>

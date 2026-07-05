@@ -190,7 +190,6 @@ app.include_router(callbacks_router, prefix="/api/v1")
 app.include_router(webapp_router, prefix="/api/v1/webapp")
 app.include_router(admin_webapp_router, prefix="/api/v1/admin/webapp")
 app.include_router(payments_router, prefix="/api/v1/payments")
-app.include_router(sub_router, prefix="/sub")
 
 
 @app.get("/sub/{token}")

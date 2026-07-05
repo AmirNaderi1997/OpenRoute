@@ -270,7 +270,7 @@ async def get_dashboard(user_data: dict = Depends(webapp_auth)) -> Dict[str, Any
                 "service_label": service_type_label(acc.service_type),
                 "ssh_password": acc.ssh_password,
                 "uuid_token": None,
-                "import_link": f"{settings.APP_BASE_URL.rstrip('/')}/sub/{acc.ssh_username}" if acc.service_type == ACCOUNT_TYPE_V2RAY else acc.import_link or connection["import_link"],
+                "import_link": acc.import_link or connection["import_link"],
                 "connection_host": connection["host"],
                 "connection_port": connection["port"],
                 "connection_path": connection["path"],
